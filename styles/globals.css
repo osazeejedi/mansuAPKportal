@@ -1,0 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #0070f3;
+  --success: #28a745;
+  /* ... rest of your CSS ... */
+}
+
+/* Rest of your existing CSS */ 
