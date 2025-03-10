@@ -6,6 +6,7 @@ import fs from 'fs';
 export const config = {
   api: {
     bodyParser: false,
+    responseLimit: '200mb',
   },
 };
 
@@ -26,9 +27,11 @@ export default async function handler(req, res) {
     // Skip the initial connection test since we know it works
     console.log('Starting file upload process...');
     
-    // Parse form with formidable
-    const form = new formidable.IncomingForm();
-    form.keepExtensions = true;
+    // Parse form with increased size limits
+    const form = new formidable.IncomingForm({
+      maxFileSize: 200 * 1024 * 1024, // 200MB in bytes
+      keepExtensions: true,
+    });
     
     const [fields, files] = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {

@@ -53,53 +53,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadForm = document.querySelector('.upload-form');
     
     if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
+        uploadForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Validate form
-            const appName = document.getElementById('app-name').value;
-            const version = document.getElementById('version').value;
-            const buildType = document.getElementById('build-type').value;
-            const releaseDate = document.getElementById('release-date').value;
-            const releaseNotes = document.getElementById('release-notes').value;
-            const apkFile = document.getElementById('apk-file').files[0];
-            
-            if (!appName || !version || !apkFile) {
-                alert('Please fill in all required fields and upload an APK file.');
-                return;
-            }
-            
-            // Create form data for upload
-            const formData = new FormData();
-            formData.append('appName', appName);
-            formData.append('version', version);
-            formData.append('buildType', buildType);
-            formData.append('releaseDate', releaseDate);
-            formData.append('releaseNotes', releaseNotes);
-            formData.append('apkFile', apkFile);
-            
-            // Update UI to show upload in progress
+            const formData = new FormData(this);
             const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading...';
             
-            // Send to server
-            fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(async response => {
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Uploading...';
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Server error:', errorData);
-                    throw new Error(errorData.details || 'Upload failed');
+                    const errorData = await response.json().catch(() => ({
+                        error: `HTTP error! status: ${response.status}`
+                    }));
+                    throw new Error(errorData.error || 'Upload failed');
                 }
-                return response.json();
-            })
-            .then(data => {
+                
+                const data = await response.json();
                 console.log('Upload successful:', data);
                 alert('APK uploaded successfully!');
-                uploadForm.reset();
+                
+                // Reset form and UI
+                this.reset();
+                const fileUpload = document.querySelector('.file-upload-box');
                 fileUpload.innerHTML = `
                     <i class="fas fa-cloud-upload-alt"></i>
                     <p>Drag and drop APK file here or click to browse</p>
@@ -107,15 +89,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Add the new APK to the list without page refresh
                 addNewApkToList(data.apk);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Upload error:', error);
-                alert('Upload failed: ' + error.message);
-            })
-            .finally(() => {
+                alert(`Upload failed: ${error.message}`);
+            } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Upload APK';
-            });
+            }
         });
     }
     
