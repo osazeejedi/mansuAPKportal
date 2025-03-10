@@ -11,11 +11,5 @@
       "src": "/(.*)",
       "dest": "/"
     }
-  ],
-  "functions": {
-    "api/upload.js": {
-      "memory": 3008,
-      "maxDuration": 300
-    }
-  }
+  ]
 } 

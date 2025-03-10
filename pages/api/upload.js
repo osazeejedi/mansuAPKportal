@@ -1,3 +1,4 @@
+// Version: 1.0.1 - Streaming upload support
 import { createClient } from '@supabase/supabase-js';
 import formidable from 'formidable';
 import fs from 'fs';
