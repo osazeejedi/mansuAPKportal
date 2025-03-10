@@ -1,4 +1,6 @@
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
   api: {
     bodyParser: false,
     responseLimit: '200mb',
@@ -11,4 +13,6 @@ module.exports = {
     // Will be available on both server and client
     maxFileSize: '200MB',
   },
-} 
+}
+
+module.exports = nextConfig 
