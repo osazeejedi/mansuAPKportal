@@ -181,7 +181,7 @@ export default function Home() {
                 <h4>Contact</h4>
                 <p>Building 3 North London Business Park</p>
                 <p>Oakleigh Road South</p>
-                <p>Email: <a href="mailto:internal@mansu.io">internal@mansu.io</a></p>
+                <p>Email: <a href="osazee:internal@mansu.io">internal@mansu.io</a></p>
               </div>
             </div>
             
