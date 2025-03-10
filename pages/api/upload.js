@@ -6,7 +6,7 @@ import fs from 'fs';
 export const config = {
   api: {
     bodyParser: false,
-    responseLimit: '200mb',
+    responseLimit: false, // Disable Next.js body parser
   },
 };
 
@@ -24,23 +24,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Skip the initial connection test since we know it works
     console.log('Starting file upload process...');
     
-    // Parse form with increased size limits
-    const form = new formidable.IncomingForm({
-      maxFileSize: 200 * 1024 * 1024, // 200MB in bytes
+    // Configure formidable with streaming
+    const form = formidable({
+      maxFileSize: 200 * 1024 * 1024, // 200MB
       keepExtensions: true,
+      allowEmptyFiles: false,
+      multiples: false,
+      fileWriteStreamHandler: () => {
+        // Use a temporary file for streaming
+        const tmpFilePath = `/tmp/upload-${Date.now()}.apk`;
+        return fs.createWriteStream(tmpFilePath);
+      },
     });
-    
+
+    // Parse the form
     const [fields, files] = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) {
           console.error('Form parsing error:', err);
           reject(err);
         }
-        console.log('Parsed fields:', fields);
-        console.log('Files received:', Object.keys(files));
         resolve([fields, files]);
       });
     });
@@ -53,16 +58,26 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    console.log('Reading file:', apkFile.filepath);
-    const fileContent = fs.readFileSync(apkFile.filepath);
+    // Read file in chunks
+    const fileStream = fs.createReadStream(apkFile.filepath);
+    const chunks = [];
+
+    fileStream.on('data', chunk => chunks.push(chunk));
+
+    await new Promise((resolve, reject) => {
+      fileStream.on('end', resolve);
+      fileStream.on('error', reject);
+    });
+
+    const fileContent = Buffer.concat(chunks);
     console.log('File size:', fileContent.length, 'bytes');
     
-    // Generate a unique filename
+    // Generate filename
     const timestamp = Date.now();
     const filename = `${appName.replace(/\s+/g, '-')}-v${version}-${timestamp}.apk`;
     console.log('Generated filename:', filename);
     
-    // Upload to Supabase Storage
+    // Upload to Supabase
     console.log('Starting Supabase upload...');
     const { data, error } = await supabase.storage
       .from('apk-files')
@@ -106,6 +121,9 @@ export default async function handler(req, res) {
       console.error('Database error:', metaError);
       throw metaError;
     }
+
+    // Cleanup
+    fs.unlinkSync(apkFile.filepath);
 
     console.log('Upload process completed successfully');
     return res.status(200).json({
